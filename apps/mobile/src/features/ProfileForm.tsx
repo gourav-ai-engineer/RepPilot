@@ -1,11 +1,6 @@
 import {
-  DIET_LABELS,
   EQUIPMENT,
   EQUIPMENT_LABELS,
-  EXPERIENCE_LABELS,
-  GOAL_LABELS,
-  LIMITATION_LABELS,
-  WEEKDAY_SHORT,
   type Diet,
   type Equipment,
   type Experience,
@@ -58,8 +53,8 @@ export function ProfileForm({ initial, submitLabel, onSubmit }: {
       <Card>
         <H3>{S.onboarding.goal}</H3>
         <ChipRow>
-          {(Object.keys(GOAL_LABELS) as Goal[]).map((g) => (
-            <Chip key={g} label={GOAL_LABELS[g]} selected={p.goal === g} onPress={() => set('goal', g)} />
+          {(Object.keys(S.options.goal) as Goal[]).map((g) => (
+            <Chip key={g} label={S.options.goal[g]} selected={p.goal === g} onPress={() => set('goal', g)} />
           ))}
         </ChipRow>
       </Card>
@@ -67,8 +62,8 @@ export function ProfileForm({ initial, submitLabel, onSubmit }: {
       <Card>
         <H3>{S.onboarding.experience}</H3>
         <ChipRow>
-          {(Object.keys(EXPERIENCE_LABELS) as Experience[]).map((x) => (
-            <Chip key={x} label={EXPERIENCE_LABELS[x]} selected={p.experience === x} onPress={() => set('experience', x)} />
+          {(Object.keys(S.options.experience) as Experience[]).map((x) => (
+            <Chip key={x} label={S.options.experience[x]} selected={p.experience === x} onPress={() => set('experience', x)} />
           ))}
         </ChipRow>
       </Card>
@@ -80,7 +75,7 @@ export function ProfileForm({ initial, submitLabel, onSubmit }: {
           {([0, 1, 2, 3, 4, 5, 6] as Weekday[]).map((d) => (
             <Chip
               key={d}
-              label={WEEKDAY_SHORT[d]}
+              label={S.daysShort[d]}
               selected={p.trainingDays.includes(d)}
               onPress={() => set('trainingDays', toggle(p.trainingDays, d).sort((a, b) => a - b))}
             />
@@ -115,8 +110,8 @@ export function ProfileForm({ initial, submitLabel, onSubmit }: {
         <H3>{S.onboarding.limitations}</H3>
         <Muted>{S.onboarding.limitationsHint}</Muted>
         <ChipRow>
-          {(Object.keys(LIMITATION_LABELS) as Limitation[]).map((l) => (
-            <Chip key={l} label={LIMITATION_LABELS[l]} selected={p.limitations.includes(l)} onPress={() => set('limitations', toggle(p.limitations, l))} />
+          {(Object.keys(S.options.limitation) as Limitation[]).map((l) => (
+            <Chip key={l} label={S.options.limitation[l]} selected={p.limitations.includes(l)} onPress={() => set('limitations', toggle(p.limitations, l))} />
           ))}
         </ChipRow>
       </Card>
@@ -124,8 +119,8 @@ export function ProfileForm({ initial, submitLabel, onSubmit }: {
       <Card>
         <H3>{S.onboarding.diet}</H3>
         <ChipRow>
-          {(Object.keys(DIET_LABELS) as Diet[]).map((d) => (
-            <Chip key={d} label={DIET_LABELS[d]} selected={p.diet === d} onPress={() => set('diet', d)} />
+          {(Object.keys(S.options.diet) as Diet[]).map((d) => (
+            <Chip key={d} label={S.options.diet[d]} selected={p.diet === d} onPress={() => set('diet', d)} />
           ))}
         </ChipRow>
         <Input

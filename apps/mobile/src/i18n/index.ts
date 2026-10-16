@@ -1,10 +1,18 @@
 import { en, type Strings } from './en';
+import { hi } from './hi';
 
-const locales: Record<string, Strings> = { en };
+export type Locale = 'en' | 'hi';
 
-/** Active UI strings. Language switching can be added here without changing screens. */
+export const LOCALES: { code: Locale; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'हिन्दी' },
+];
+
+const locales: Record<Locale, Strings> = { en, hi };
+
+/** Active UI strings. Screens read S during render, so a re-render picks up a language change. */
 export let S: Strings = en;
 
-export function setLocale(code: string): void {
-  S = locales[code] ?? en;
+export function setLocale(code: Locale | undefined): void {
+  S = locales[code ?? 'en'] ?? en;
 }

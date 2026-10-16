@@ -11,3 +11,4 @@ export * from './nutrition';
 export * from './hydration';
 export * from './chatbot';
 export * from './form';
+export * from './sync';

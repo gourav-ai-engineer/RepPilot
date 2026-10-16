@@ -14,13 +14,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
-        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarStyle: { minHeight: 64, paddingTop: 4 },
         headerTitleStyle: { fontWeight: '700' },
       }}
     >
       <Tabs.Screen name="index" options={{ title: S.tabs.plan, tabBarIcon: icon('🗓️') }} />
       <Tabs.Screen name="exercises" options={{ title: S.tabs.exercises, tabBarIcon: icon('🏋️') }} />
+      <Tabs.Screen name="community" options={{ title: S.tabs.community, tabBarIcon: icon('👥') }} />
       <Tabs.Screen name="progress" options={{ title: S.tabs.progress, tabBarIcon: icon('📈') }} />
       <Tabs.Screen name="food" options={{ title: S.tabs.food, tabBarIcon: icon('🍲') }} />
       <Tabs.Screen name="coach" options={{ title: S.tabs.coach, tabBarIcon: icon('💬') }} />

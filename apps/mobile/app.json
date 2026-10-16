@@ -34,7 +34,16 @@
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RepPilot lets you choose a photo or video to share with the community, only when you tap Add photo.",
+          "cameraPermission": "RepPilot uses the camera only when you choose to take a photo or start a form check.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }

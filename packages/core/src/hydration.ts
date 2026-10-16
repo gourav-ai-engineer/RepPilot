@@ -25,6 +25,8 @@ export const HYDRATION_NOTE =
   'If you have kidney or heart conditions, follow your doctor’s advice.';
 
 export interface WaterEntry {
+  /** Set on new entries so entries from two devices can be merged. */
+  id?: string;
   date: string;
   ml: number;
 }

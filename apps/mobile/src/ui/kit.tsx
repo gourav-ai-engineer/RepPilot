@@ -115,7 +115,7 @@ export function Input(props: TextInputProps & { label?: string }) {
   return (
     <View style={{ gap: space.xs }}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <TextInput placeholderTextColor={colors.muted} style={[styles.input, style]} {...rest} />
+      <TextInput accessibilityLabel={label} placeholderTextColor={colors.muted} style={[styles.input, style]} {...rest} />
     </View>
   );
 }

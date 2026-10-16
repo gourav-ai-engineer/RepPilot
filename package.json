@@ -10,6 +10,7 @@
     "test": "npm run test --workspace @reppilot/core",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "web": "npm run web --workspace mobile",
-    "start": "npm run start --workspace mobile"
+    "start": "npm run start --workspace mobile",
+    "test:api": "cd apps/api && python -m pytest"
   }
 }

@@ -1,14 +1,15 @@
 # RepPilot
 
-An AI-assisted fitness companion for gym-goers: personalised weekly plans, equipment-aware exercise swaps, missed-session rescheduling, muscle-coverage tracking, nutrition and water logging, a constrained fitness coach, and a camera form check that is honest about what it can and cannot see.
+An AI-assisted fitness companion for gym-goers: personalised weekly plans, equipment-aware exercise swaps, missed-session rescheduling, muscle-coverage tracking, nutrition and water logging, a constrained fitness coach, a camera form check that is honest about what it can and cannot see, and a moderated fitness community with friends, messages, challenges and leaderboards.
 
-This repository holds the **Phase 1 MVP** described in the RepPilot PRD v1.0. It runs entirely on the device, with sample data, no backend and no paid APIs.
+This repository implements the features in the RepPilot PRD v1.0. Training, food and the coach work offline on the device. An optional account adds cloud backup and the community. No paid APIs are used.
 
 ## Repository layout
 
 ```
 packages/core   Deterministic training engine (TypeScript, no UI). Unit-tested.
 apps/mobile     Expo / React Native app (Android, iOS, web) built on core.
+apps/api        FastAPI backend: accounts, sync, community, messages, challenges, moderation. See apps/api/README.md.
 ```
 
 ### `@reppilot/core`
@@ -24,31 +25,55 @@ apps/mobile     Expo / React Native app (Android, iOS, web) built on core.
 | `nutrition.ts`, `hydration.ts` | Indian-familiar food list with estimates, diet filtering, protein range, capped water goals, general vitamin and mineral information | FR-07, FR-08 |
 | `chatbot.ts` | Rule-based coach grounded in the library and the user's plan. Safety checks run first (emergency symptoms, pain, medical, extreme dieting, unsafe lifting) | FR-09 |
 | `form.ts` | Form rules on MediaPipe pose landmarks for squats and push-ups: rep counting, depth, torso lean, hip sag and tempo, with confidence levels and a "cannot assess" outcome | FR-04 |
+| `sync.ts` | Merges data from two devices without losing workouts, meals or water | Reliability |
 
 Nothing in core uses randomness or a language model, so the same input always gives the same plan.
 
 ### `apps/mobile`
 
-Tabs: **Plan**, **Exercises**, **Progress**, **Food**, **Coach**. Other screens: onboarding, workout logging, exercise detail, form check and profile.
+Tabs: **Plan**, **Exercises**, **Social**, **Progress**, **Food**, **Coach**.
 
-- Onboarding has an 18+ gate (the PRD calls for an adult-only pilot) and collects only what the plan needs.
-- Workout screen: log reps and weight, swap an exercise (with reasons), or report a missed workout. You see the proposed change and approve it before anything is saved. Every change goes into "What changed in your plan".
-- Data is stored on the device (AsyncStorage). Profile → "Delete all my data" wipes it.
-- Large touch targets and simple wording. All UI text is in `src/i18n/en.ts`, so adding Hindi means adding one file of the same shape.
-- **Camera form check**
-  - **Web:** fully working. MediaPipe Pose Landmarker runs in the browser and the video never leaves the device; only the model files are downloaded.
-  - **Native:** camera preview for positioning plus a manual self-check. Live pose analysis on native needs an on-device pose module in a development build (see next steps).
+- **Onboarding** has an 18+ gate (adult-only pilot) and collects only what the plan needs.
+- **Workouts:** log reps and weight, swap an exercise (with reasons), or report a missed workout. You approve proposed changes before they are saved, and every change goes into "What changed in your plan".
+- **Account and sync (optional):** back up to the server and use it on several devices. Changes made offline are merged, never overwritten. On logout you choose whether to keep data on the device. Accounts can be deleted from the app.
+- **Social:**
+  - Feed (friends / everyone / mine) with posts, likes and comments
+  - Photo and video posts that stay hidden until a moderator approves them
+  - Friend search and requests, blocking, friends-only messages
+  - Reporting on posts, comments and messages
+  - A screen showing every moderation decision about you, with appeals
+- **Challenges:** push-ups, pull-ups, plank, squats, a bench 5-rep best (never a one-rep max) and a consistency week. Leaderboards have experience divisions, a friends view, a "most improved" mode and an opt-out.
+- **Moderator screen:** review queue (high priority first), approve / remove / warn / suspend / close account, appeals and safety metrics. Moderators are set by email in the API config.
+- **Reminders** (phone app): workout reminders on training days only, and up to 4 water nudges a day. Both are off by default.
+- **Languages:** English and Hindi (Profile → Language). The Hindi strings in `src/i18n/hi.ts` are a first draft. Exercise, food and coach content is still English.
+- **Camera form check:** the MediaPipe pose model runs on the device and the video is never uploaded.
+  - **Web:** runs in the browser.
+  - **Phone:** runs inside a WebView with the same model.
+  - The landmarks are scored by `@reppilot/core` on both. If the camera can't start, a manual self-check is offered.
 
 ## Running it
 
-Requires Node 20+.
+Requires Node 20+ and Python 3.11+.
 
 ```bash
+# Backend (needed for accounts and Social; the rest of the app works without it)
+cd apps/api && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
+MODERATOR_EMAILS=you@example.com uvicorn reppilot_api.main:app --reload --port 8000
+
+# App (from the repository root, in another terminal)
 npm install
-npm test            # core engine unit tests
-npm run typecheck   # core + app
-npm run web         # open the app in a browser (camera form check works here)
-npm start           # Expo dev server — scan the QR code with Expo Go on a phone
+npm run web         # opens in a browser
+npm start           # Expo dev server — scan the QR code with Expo Go
+```
+
+The app talks to `http://localhost:8000` by default. Set `EXPO_PUBLIC_API_URL` to point it at a deployed server. On a real phone, use your computer's LAN IP or a public URL, not localhost.
+
+Tests:
+
+```bash
+npm test                                   # core engine (vitest)
+npm run typecheck                          # core + app
+cd apps/api && pytest                      # backend
 ```
 
 To build a static web version: `cd apps/mobile && npx expo export --platform web` (output goes to `apps/mobile/dist`).
@@ -61,16 +86,13 @@ To build a static web version: `cd apps/mobile && npx expo export --platform web
 - Missed workouts never double the volume. Rest days never break streaks. Ranks are described as consistency, not fitness or worth.
 - Water goals are capped and come with a warning against over-drinking. Nutrition values are labelled as estimates.
 
-## Not in this MVP (by design, per the PRD roadmap)
+- Community safety: see [apps/api/README.md](apps/api/README.md#safety-model). It covers screening, human review of all media, report thresholds, strikes, suspensions, appeals to a second moderator, blocking and rate limits.
 
-- Social feed, friends, messaging, video sharing, leaderboards and moderation (Phase 4). The PRD requires moderation, reporting and appeals to exist *before* any uploads are allowed.
-- Cloud accounts and sync. The FastAPI + PostgreSQL backend in the PRD is not needed for a local-first pilot.
-- Billing.
+## Before a public launch
 
-## Suggested next steps
-
-1. **Trainer review** of the exercise library, prescription rules (`planner.ts`) and form thresholds (`form.ts`) before any public pilot. Build the labelled video evaluation set the PRD asks for.
-2. **Native pose detection**: add an on-device MediaPipe pose module to an Expo development build and feed its landmarks into the existing `analyzeForm`.
-3. Hindi strings (`src/i18n/hi.ts`), then voice-friendly instructions and demonstration media.
-4. An optional LLM behind the existing `reply()` interface, grounded on the same library and keeping the safety pre-checks.
-5. Product analytics for the PRD success metrics (onboarding completion, first workout, week-4 retention).
+1. **Trainer review** of the exercise library, prescription rules (`planner.ts`), form thresholds (`form.ts`) and challenge rules. Build the labelled video evaluation set the PRD asks for.
+2. **Test on real phones.** The camera form check in the Android/iOS WebView and the notification reminders were built against the libraries' APIs, but have only been exercised in a desktop browser.
+3. **Native speaker review** of the Hindi text, and translation of exercise, food and coach content.
+4. **Production server:** PostgreSQL, a strong `JWT_SECRET`, HTTPS, object storage for media, shared rate limiting (Redis), database migrations and backups. Text screening is keyword-based; consider a moderation service once there is traffic. A legal and privacy review (India's DPDP Act) is also needed.
+5. **Billing** is not built. The PRD says to validate willingness to pay first.
+6. Product analytics for the PRD success metrics (onboarding completion, first workout, week-4 retention).

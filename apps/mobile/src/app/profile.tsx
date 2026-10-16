@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ProfileForm } from '../features/ProfileForm';
-import { S } from '../i18n';
+import { applyReminders } from '../features/reminders';
+import { LOCALES, S } from '../i18n';
 import { useStore, wipeStorage } from '../state/store';
-import { Body, Button, Card, H3, Muted, Screen } from '../ui/kit';
+import { Body, Button, Card, Chip, ChipRow, H3, Muted, Screen } from '../ui/kit';
 
 export default function ProfileScreen() {
   const { state, dispatch, today } = useStore();
@@ -13,11 +14,24 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
+      <Card>
+        <H3>🌐 {S.settings.language}</H3>
+        <ChipRow>
+          {LOCALES.map((l) => (
+            <Chip key={l.code} label={l.label} selected={state.locale === l.code} onPress={() => dispatch({ type: 'setLocale', locale: l.code })} />
+          ))}
+        </ChipRow>
+        <Button kind="secondary" icon="☁️" label={state.account ? `${S.settings.account} ✓` : S.settings.account} onPress={() => router.push('/account')} />
+        <Button kind="secondary" icon="⏰" label={S.settings.reminders} onPress={() => router.push('/reminders')} />
+        <Button kind="ghost" icon="📜" label={S.settings.standards} onPress={() => router.push('/standards')} />
+      </Card>
       <ProfileForm
         initial={state.profile}
         submitLabel={S.profile.save}
         onSubmit={(profile) => {
           dispatch({ type: 'setProfile', profile, today });
+          // Reminders follow the training days.
+          if (state.reminders.workout || state.reminders.water) void applyReminders(state.reminders, profile.trainingDays).catch(() => {});
           setSaved(true);
         }}
       />

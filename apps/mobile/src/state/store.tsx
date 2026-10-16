@@ -4,16 +4,20 @@ import {
   clampWaterGoalMl,
   generateWeeklyPlan,
   localISODate,
+  mergeSyncData,
   mondayOf,
   suggestedWaterGoalMl,
   weekdayOf,
   type MealEntry,
   type Profile,
+  type SyncData,
   type WaterEntry,
   type WeeklyPlan,
   type WorkoutLog,
 } from '@reppilot/core';
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react';
+import type { Me } from '../api/client';
+import { setLocale, type Locale } from '../i18n';
 
 export interface ChatMessage {
   id: string;
@@ -33,6 +37,26 @@ export interface AppState {
   water: WaterEntry[];
   waterGoalMl: number;
   chat: ChatMessage[];
+  /** When synced data (profile, plans, logs, food, water) last changed on this device. */
+  dataUpdatedAt: string;
+  account?: { token: string; user: Me };
+  sync: SyncMeta;
+  reminders: Reminders;
+  locale: Locale;
+}
+
+export interface SyncMeta {
+  version: number;
+  lastSyncedAt?: string;
+  status: 'idle' | 'syncing' | 'error';
+  error?: string;
+}
+
+export interface Reminders {
+  workout: boolean;
+  /** Hour of day (0–23) for workout reminders on training days. */
+  workoutHour: number;
+  water: boolean;
 }
 
 const STORAGE_KEY = 'reppilot:v1';
@@ -47,7 +71,24 @@ export const initialState: AppState = {
   water: [],
   waterGoalMl: DEFAULT_WATER_GOAL_ML,
   chat: [],
+  dataUpdatedAt: new Date(0).toISOString(),
+  sync: { version: 0, status: 'idle' },
+  reminders: { workout: false, workoutHour: 18, water: false },
+  locale: 'en',
 };
+
+export function toSyncData(s: AppState): SyncData {
+  return {
+    updatedAt: s.dataUpdatedAt,
+    profile: s.profile,
+    plan: s.plan,
+    pastPlans: s.pastPlans,
+    logs: s.logs,
+    meals: s.meals,
+    water: s.water,
+    waterGoalMl: s.waterGoalMl,
+  };
+}
 
 export type Action =
   | { type: 'hydrate'; state: AppState }
@@ -62,7 +103,19 @@ export type Action =
   | { type: 'setWaterGoal'; ml: number }
   | { type: 'addChat'; messages: ChatMessage[] }
   | { type: 'clearChat' }
+  | { type: 'setAccount'; account: { token: string; user: Me } }
+  | { type: 'updateUser'; user: Me }
+  | { type: 'logout' }
+  | { type: 'setSync'; patch: Partial<SyncMeta> }
+  | { type: 'applySynced'; data: SyncData; version: number }
+  | { type: 'setReminders'; reminders: Reminders }
+  | { type: 'setLocale'; locale: Locale }
   | { type: 'reset' };
+
+/** Actions that change data which is backed up to the account. */
+const SYNCED_ACTIONS = new Set<Action['type']>([
+  'setProfile', 'ensureWeek', 'replacePlan', 'saveWorkout', 'addMeal', 'removeMeal', 'addWater', 'undoWater', 'setWaterGoal',
+]);
 
 export function newId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -88,8 +141,15 @@ function replanKeepingHistory(old: WeeklyPlan | undefined, profile: Profile, tod
 }
 
 export function reducer(state: AppState, action: Action): AppState {
+  const next = baseReducer(state, action);
+  if (next !== state && SYNCED_ACTIONS.has(action.type)) return { ...next, dataUpdatedAt: new Date().toISOString() };
+  return next;
+}
+
+function baseReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'hydrate':
+      setLocale(action.state.locale);
       return action.state;
     case 'setProfile': {
       const firstTime = !state.profile;
@@ -144,8 +204,39 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, chat: [...state.chat, ...action.messages].slice(-MAX_CHAT) };
     case 'clearChat':
       return { ...state, chat: [] };
+    case 'setAccount':
+      return { ...state, account: action.account, sync: { version: 0, status: 'idle' } };
+    case 'updateUser':
+      return state.account ? { ...state, account: { ...state.account, user: action.user } } : state;
+    case 'logout':
+      return { ...state, account: undefined, sync: { version: 0, status: 'idle' } };
+    case 'setSync':
+      return { ...state, sync: { ...state.sync, ...action.patch } };
+    case 'applySynced': {
+      // Changes made on this device while the sync was in flight are merged in, not lost.
+      const current = toSyncData(state);
+      const d = current.updatedAt > action.data.updatedAt ? mergeSyncData(current, action.data) : action.data;
+      return {
+        ...state,
+        profile: d.profile,
+        plan: d.plan,
+        pastPlans: d.pastPlans,
+        logs: d.logs,
+        meals: d.meals,
+        water: d.water,
+        waterGoalMl: d.waterGoalMl,
+        dataUpdatedAt: d.updatedAt,
+        sync: { version: action.version, status: 'idle', lastSyncedAt: new Date().toISOString() },
+      };
+    }
+    case 'setReminders':
+      return { ...state, reminders: action.reminders };
+    case 'setLocale':
+      setLocale(action.locale);
+      return { ...state, locale: action.locale };
     case 'reset':
-      return initialState;
+      setLocale('en');
+      return { ...initialState, dataUpdatedAt: new Date().toISOString() };
   }
 }
 
@@ -171,7 +262,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (raw) {
           try {
             const parsed = JSON.parse(raw) as AppState;
-            if (parsed.version === 1) dispatch({ type: 'hydrate', state: { ...initialState, ...parsed } });
+            if (parsed.version === 1) {
+              dispatch({
+                type: 'hydrate',
+                state: { ...initialState, ...parsed, sync: { ...initialState.sync, ...parsed.sync, status: 'idle' } },
+              });
+            }
           } catch {
             // Corrupt storage: start fresh rather than crash.
           }

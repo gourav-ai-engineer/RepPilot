@@ -1,6 +1,4 @@
 import {
-  WEEKDAY_LABELS,
-  WEEKDAY_SHORT,
   eligibilityFromProfile,
   estimateSessionMinutes,
   findSubstitutes,
@@ -105,7 +103,7 @@ export default function SessionScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: `${WEEKDAY_LABELS[session.day]} workout` }} />
+      <Stack.Screen options={{ title: `${S.days[session.day]} · ${S.community.kinds.workout}` }} />
       <H2>{session.title}</H2>
       <Muted>
         {S.session.estimated(estimateSessionMinutes(session))}
@@ -253,7 +251,7 @@ export default function SessionScreen() {
                 <Muted>{S.session.pickDay}</Muted>
                 <ChipRow>
                   {safeDays.map((d) => (
-                    <Chip key={d} label={`${WEEKDAY_SHORT[d]}`} onPress={() => propose('reschedule', d)} />
+                    <Chip key={d} label={S.daysShort[d]} onPress={() => propose('reschedule', d)} />
                   ))}
                 </ChipRow>
               </>

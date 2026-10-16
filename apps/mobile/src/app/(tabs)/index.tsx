@@ -1,6 +1,4 @@
 import {
-  WEEKDAY_LABELS,
-  WEEKDAY_SHORT,
   estimateSessionMinutes,
   weekdayOf,
   type Session,
@@ -36,7 +34,7 @@ export default function PlanScreen() {
       <H1>{S.plan.hello(profile.name)}</H1>
 
       <Card tone="primary">
-        <Muted>{S.plan.today} · {WEEKDAY_LABELS[todayDay]}</Muted>
+        <Muted>{S.plan.today} · {S.days[todayDay]}</Muted>
         {todays ? (
           <>
             <H2>{todays.title}</H2>
@@ -53,7 +51,7 @@ export default function PlanScreen() {
           <>
             <H2>😌 {S.plan.restDay}</H2>
             <Body>{S.plan.restDayBody}</Body>
-            {next ? <Muted>{S.plan.nextUp(WEEKDAY_LABELS[next.day], next.title)}</Muted> : null}
+            {next ? <Muted>{S.plan.nextUp(S.days[next.day], next.title)}</Muted> : null}
           </>
         )}
       </Card>
@@ -75,7 +73,7 @@ export default function PlanScreen() {
                 backgroundColor: isToday ? colors.primary : 'transparent',
               }}
             >
-              <Text style={{ color: isToday ? '#fff' : colors.muted, fontSize: 13 }}>{WEEKDAY_SHORT[d]}</Text>
+              <Text style={{ color: isToday ? '#fff' : colors.muted, fontSize: 13 }}>{S.daysShort[d]}</Text>
               <Text style={{ color: isToday ? '#fff' : s ? colors.primaryDark : colors.muted, fontSize: 18, fontWeight: '700' }}>{mark}</Text>
             </View>
           );
@@ -86,7 +84,7 @@ export default function PlanScreen() {
         <Pressable key={s.id} onPress={() => router.push(`/session/${s.id}`)} accessibilityRole="button">
           <Card style={s.status === 'skipped' ? { opacity: 0.6 } : undefined}>
             <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <H3>{WEEKDAY_LABELS[s.day]}</H3>
+              <H3>{S.days[s.day]}</H3>
               <Muted>{statusLabel(s)}</Muted>
             </Row>
             <Body>{s.title}</Body>

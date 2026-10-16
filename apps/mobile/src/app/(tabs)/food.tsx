@@ -47,7 +47,7 @@ export default function FoodScreen() {
         <Body>{S.food.glasses(glasses, goalGlasses)}</Body>
         <Bar value={glasses} max={goalGlasses} color={colors.primary} />
         <Row>
-          <Button label={S.food.addGlass} onPress={() => dispatch({ type: 'addWater', entry: { date: today, ml: GLASS_ML } })} />
+          <Button label={S.food.addGlass} onPress={() => dispatch({ type: 'addWater', entry: { id: newId(), date: today, ml: GLASS_ML } })} />
           <Button kind="ghost" label={S.food.undo} disabled={glasses === 0} onPress={() => dispatch({ type: 'undoWater', date: today })} />
         </Row>
         <Row style={{ alignItems: 'center' }}>
