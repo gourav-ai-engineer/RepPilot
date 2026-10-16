@@ -261,6 +261,7 @@ export const en = {
   },
   community: {
     title: 'Community',
+    comingSoon: 'Accounts, backup and the community are coming in the next test version. Everything else works now, and your data stays on this device.',
     signedOut: 'Join the community to share progress, add friends, message and take part in challenges.',
     getStarted: 'Log in or create account',
     friendsFeed: 'Friends',

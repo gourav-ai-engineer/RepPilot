@@ -4,6 +4,8 @@
  */
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+/** Set EXPO_PUBLIC_API_URL to an empty string to ship a build without accounts and Social. */
+export const API_ENABLED = API_URL !== '';
 
 export class ApiError extends Error {
   constructor(

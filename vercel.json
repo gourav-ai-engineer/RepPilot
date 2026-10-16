@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm ci",
+  "buildCommand": "cd apps/mobile && EXPO_PUBLIC_API_URL= npx expo export --platform web",
+  "outputDirectory": "apps/mobile/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

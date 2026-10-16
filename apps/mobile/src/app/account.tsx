@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { API_URL, api, type ModAction } from '../api/client';
+import { API_ENABLED, API_URL, api, type ModAction } from '../api/client';
 import { attempt, useApi } from '../api/useApi';
 import { useSyncNow } from '../features/sync';
 import { S } from '../i18n';
@@ -129,6 +129,13 @@ export default function AccountScreen() {
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  if (!API_ENABLED) {
+    return (
+      <Screen>
+        <Body>{S.community.comingSoon}</Body>
+      </Screen>
+    );
+  }
   if (!account) {
     return (
       <Screen>

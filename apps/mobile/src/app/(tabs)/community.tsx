@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { api, type Post } from '../../api/client';
+import { API_ENABLED, api, type Post } from '../../api/client';
 import { useApi } from '../../api/useApi';
 import { PostCard } from '../../features/community/PostCard';
 import { S } from '../../i18n';
@@ -26,6 +26,15 @@ export default function CommunityScreen() {
     }, [scope, feed.token]),
   );
 
+  if (!API_ENABLED) {
+    return (
+      <Screen>
+        <Card tone="primary">
+          <Body>{S.community.comingSoon}</Body>
+        </Card>
+      </Screen>
+    );
+  }
   if (!state.account) {
     return (
       <Screen>
