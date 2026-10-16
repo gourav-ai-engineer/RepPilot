@@ -1,0 +1,15 @@
+{
+  "name": "reppilot",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace @reppilot/core",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "web": "npm run web --workspace mobile",
+    "start": "npm run start --workspace mobile"
+  }
+}
